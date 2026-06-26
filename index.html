@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Quiet Folder — prototype</title>
+<style>
+:root{--bg:#0e1020;--card:#171a2e;--line:#272b45;--ink:#eef0fb;--muted:#9aa0c0;--accent:#2f7d3a;--accentd:#1c5a2a;--gold:#e0a82e;--red:#c5384a;--legacy:#3a86c8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:640px;margin:0 auto;padding:16px 16px 60px}
+header{display:flex;align-items:center;gap:10px;padding:6px 2px 14px}
+header .logo{font-size:20px;font-weight:800;letter-spacing:.3px}
+header .dev{margin-left:auto;font-size:12px;color:var(--muted);background:#1d2138;border:1px solid var(--line);border-radius:20px;padding:5px 11px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:13px}
+h2{font-size:15px;margin:0 0 8px;letter-spacing:.02em}
+label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
+input,textarea,select{width:100%;background:#10132a;border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--ink);font-size:15px;font-family:inherit}
+textarea{min-height:64px;resize:vertical}
+button{cursor:pointer;border:none;border-radius:11px;font-weight:700;font-size:15px;padding:12px 14px}
+.btn{background:var(--accent);color:#fff;width:100%}
+.btn:active{background:var(--accentd)}
+.btn.ghost{background:#222742;color:var(--ink)}
+.btn.gold{background:var(--gold);color:#2a1b00}
+.btn.red{background:var(--red);color:#fff}
+.row{display:flex;gap:9px}.row>*{flex:1}
+.seg{display:flex;gap:8px;margin:6px 0}
+.seg button{flex:1;background:#10132a;border:1px solid var(--line);color:var(--muted);font-weight:600}
+.seg button.on{background:#10261a;border-color:var(--accent);color:#8be0a0}
+.seg button.onl{background:#10243a;border-color:var(--legacy);color:#9cd0f5}
+.chip{display:inline-block;font-size:11px;border-radius:20px;padding:2px 9px;font-weight:700}
+.chip.q{background:#10261a;color:#7fd698}.chip.l{background:#10243a;color:#8cc6f0}.chip.x{background:#2a1620;color:#e08a98}
+.item{border-top:1px solid var(--line);padding:11px 0;display:flex;align-items:center;gap:10px}
+.item:first-child{border-top:none}
+.item .nm{flex:1;min-width:0}.item .nm b{display:block;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .nm .s{font-size:11.5px;color:var(--muted)}
+.mini{background:#222742;color:var(--ink);border-radius:9px;padding:7px 10px;font-size:12.5px;font-weight:600}
+.mini.red{background:#3a1620;color:#f0a8b2}
+.count{font-variant-numeric:tabular-nums;font-weight:800;font-size:22px}
+.muted{color:var(--muted)}.tiny{font-size:11.5px;color:var(--muted)}
+.note{background:#1a1430;border-left:3px solid var(--gold);border-radius:0 9px 9px 0;padding:10px 12px;font-size:12.5px;color:#d8cdb0;margin-top:10px}
+.danger{background:#26141c;border-left:3px solid var(--red)}
+.hide{display:none}
+.banner{background:#2a1620;border:1px solid #4a2230;color:#f0b8c2;border-radius:12px;padding:11px 13px;font-size:13px;margin-bottom:13px}
+a.dl{color:#8cc6f0}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <span class="logo">🗄️ Quiet Folder</span>
+  <span class="dev" id="devLabel" onclick="renameDevice()">this device</span>
+</header>
+
+<!-- LOCK -->
+<div id="lock" class="card">
+  <h2>🔐 Unlock your vault</h2>
+  <div class="tiny" id="lockHint">Your passphrase derives the key on this device. <b>It is never stored and never leaves the device.</b> Lose it and the vault is unrecoverable — by design.</div>
+  <label>Your passphrase</label>
+  <input id="pass" type="password" placeholder="the key only you hold" autocomplete="off">
+  <label>Executor passphrase (optional — unlocks Legacy items later)</label>
+  <input id="expass" type="password" placeholder="a trusted person's key" autocomplete="off">
+  <button class="btn" style="margin-top:12px" onclick="unlock()">Unlock vault</button>
+</div>
+
+<!-- MAIN -->
+<div id="main" class="hide">
+
+  <div class="card">
+    <h2>⏱️ The check-in (your own timer)</h2>
+    <div class="row" style="align-items:center">
+      <div><div class="count" id="cd">—</div><div class="tiny">until Quiet items crypto-erase</div></div>
+      <button class="btn" style="flex:0 0 auto;padding:12px 18px" onclick="checkIn()">I'm still here</button>
+    </div>
+    <label style="margin-top:10px">Erase Quiet items after this many days of no check-in</label>
+    <div class="row">
+      <input id="days" type="number" min="1" value="30" oninput="saveInterval()">
+      <button class="btn ghost" onclick="simulate()">⏩ Simulate the timer running out</button>
+    </div>
+    <div class="tiny" style="margin-top:6px">You can change or cancel any of this anytime. Multi-signal trigger + grace window are the real-build safeguards.</div>
+  </div>
+
+  <div class="card">
+    <h2>➕ Add to the vault</h2>
+    <label>A note (or pick a file below)</label>
+    <textarea id="note" placeholder="something private…"></textarea>
+    <label>Or a file</label>
+    <input id="file" type="file">
+    <label>This is…</label>
+    <div class="seg">
+      <button id="segQ" class="on" onclick="setKind('quiet')">🤫 Quiet — erase on the timer</button>
+      <button id="segL" onclick="setKind('legacy')">🎁 Legacy — keep for my people</button>
+    </div>
+    <button class="btn" style="margin-top:10px" onclick="addItem()">🔒 Encrypt &amp; add</button>
+  </div>
+
+  <div class="card">
+    <h2>📂 Inside the vault <span class="tiny" id="vcount"></span></h2>
+    <div id="items"><div class="tiny">Nothing yet. Add a note or file above — it's encrypted before it's stored.</div></div>
+  </div>
+
+  <div class="banner hide" id="erasedBanner">⚠️ The timer ran out. Your <b>Quiet</b> items were <b>crypto-erased</b> — the keys are destroyed and that data is now unrecoverable, even with your passphrase. Your <b>Legacy</b> items remain for your people.</div>
+
+  <div class="note">Prototype · honest-state · single device. Real data lives encrypted in this browser only. No cloud, no key ever leaves this device. <b>Not “unhackable”</b> — it keeps data local and crypto-erases the key on your trigger. The death-aware trigger + cross-device coordination are the native + counsel phase.</div>
+  <div class="note danger">This is a working demo of the mechanism, <b>not an estate tool yet.</b> Don't store anything you can't afford to lose — and never designate records an executor legally needs (taxes, accounts) as Quiet. Counsel-gated before real use.</div>
+  <button class="btn ghost" style="margin-top:12px" onclick="lockNow()">Lock vault</button>
+</div>
+
+</div>
+<script>
+/* ===== Quiet Folder — proven key-wrapping + crypto-erase core (Web Crypto) ===== */
+var subtle = (window.crypto||window.msCrypto).subtle;
+var ENC = new TextEncoder(), DEC = new TextDecoder();
+function b64(bytes){var s="";var a=new Uint8Array(bytes);for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s);}
+function ub64(str){var bin=atob(str),a=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return a;}
+function rnd(n){return crypto.getRandomValues(new Uint8Array(n));}
+
+async function deriveKey(passphrase, salt){
+  var base = await subtle.importKey("raw", ENC.encode(passphrase), "PBKDF2", false, ["deriveKey"]);
+  return subtle.deriveKey({name:"PBKDF2", salt:salt, iterations:210000, hash:"SHA-256"}, base,
+    {name:"AES-GCM", length:256}, false, ["wrapKey","unwrapKey"]);
+}
+async function wrapUnder(key, contentKey){
+  var iv = rnd(12);
+  var w = await subtle.wrapKey("raw", contentKey, key, {name:"AES-GCM", iv:iv});
+  return {iv:b64(iv), w:b64(w)};
+}
+async function encryptItem(ownerKey, executorKey, bytes, meta){
+  var contentKey = await subtle.generateKey({name:"AES-GCM", length:256}, true, ["encrypt","decrypt"]);
+  var iv = rnd(12);
+  var ct = await subtle.encrypt({name:"AES-GCM", iv:iv}, contentKey, bytes);
+  var ownerWrap = await wrapUnder(ownerKey, contentKey);
+  var exWrap = (meta.kind==="legacy" && executorKey) ? await wrapUnder(executorKey, contentKey) : null;
+  return {id:"it"+Date.now()+Math.random().toString(36).slice(2,6), name:meta.name, kind:meta.kind, type:meta.type,
+    iv:b64(iv), ct:b64(new Uint8Array(ct)), ownerWrap:ownerWrap, exWrap:exWrap, erased:false};
+}
+async function decryptItem(key, item, useExecutor){
+  var wrap = useExecutor ? item.exWrap : item.ownerWrap;
+  if(!wrap) throw new Error("no key");
+  var contentKey = await subtle.unwrapKey("raw", ub64(wrap.w), key, {name:"AES-GCM", iv:ub64(wrap.iv)},
+    {name:"AES-GCM", length:256}, false, ["decrypt"]);
+  var pt = await subtle.decrypt({name:"AES-GCM", iv:ub64(item.iv)}, contentKey, ub64(item.ct));
+  return new Uint8Array(pt);
+}
+function cryptoErase(item){ item.ownerWrap=null; item.erased=true; } /* destroy the owner's wrap → unrecoverable */
+
+/* ===== app state (honest-state localStorage) ===== */
+var KEY="qf.vault.v1", DKEY="qf.device", state=null, ownerKey=null, executorKey=null, kind="quiet";
+function load(){try{var s=localStorage.getItem(KEY);if(s)return JSON.parse(s);}catch(e){} return {salt:b64(rnd(16)),items:[],days:30,nextErase:0,lastIn:0};}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function deviceName(){try{return localStorage.getItem(DKEY)||guessDevice();}catch(e){return "this device";}}
+function guessDevice(){var u=navigator.userAgent;if(/iPhone/.test(u))return "iPhone";if(/iPad/.test(u))return "iPad";if(/Macintosh/.test(u))return "Mac";if(/Windows/.test(u))return "Windows PC";return "this device";}
+function renameDevice(){var n=prompt("Name this device:", deviceName());if(n){localStorage.setItem(DKEY,n.slice(0,24));document.getElementById("devLabel").textContent=n.slice(0,24);}}
+
+async function unlock(){
+  var p=document.getElementById("pass").value, xp=document.getElementById("expass").value;
+  if(p.length<4){alert("Use a longer passphrase.");return;}
+  state=load();
+  ownerKey = await deriveKey(p, ub64(state.salt));
+  executorKey = xp ? await deriveKey(xp, ub64(state.salt)) : null;
+  if(!state.lastIn){ checkIn(true); }
+  document.getElementById("lock").classList.add("hide");
+  document.getElementById("main").classList.remove("hide");
+  document.getElementById("days").value = state.days||30;
+  maybeAutoErase(); render(); tick();
+}
+function lockNow(){ownerKey=null;executorKey=null;location.reload();}
+function setKind(k){kind=k;document.getElementById("segQ").className=k==="quiet"?"on":"";document.getElementById("segL").className=k==="legacy"?"onl":"";}
+function saveInterval(){state.days=Math.max(1,+document.getElementById("days").value||30);checkIn();}
+function checkIn(silent){state.lastIn=Date.now();state.nextErase=Date.now()+ (state.days||30)*864e5;save();if(!silent){render();}}
+function simulate(){ if(!confirm("Simulate the timer running out now? Quiet items will be crypto-erased (unrecoverable).")) return; state.nextErase=Date.now()-1000; maybeAutoErase(true); }
+function maybeAutoErase(force){
+  if(!state.nextErase) return;
+  if(Date.now() >= state.nextErase){
+    var any=false;
+    state.items.forEach(function(it){ if(it.kind==="quiet" && !it.erased){ cryptoErase(it); any=true; } });
+    save();
+    if(any||force){ document.getElementById("erasedBanner").classList.remove("hide"); render(); }
+  }
+}
+async function addItem(){
+  var note=document.getElementById("note").value.trim();
+  var f=document.getElementById("file").files[0];
+  var bytes, name, type;
+  if(f){ bytes=new Uint8Array(await f.arrayBuffer()); name=f.name; type="file:"+(f.type||"application/octet-stream"); }
+  else if(note){ bytes=ENC.encode(note); name=note.slice(0,40)+(note.length>40?"…":""); type="text"; }
+  else { alert("Add a note or pick a file."); return; }
+  var item = await encryptItem(ownerKey, executorKey, bytes, {name:name,kind:kind,type:type});
+  if(kind==="legacy" && !executorKey){ item._noExec=true; }
+  state.items.unshift(item); save();
+  document.getElementById("note").value=""; document.getElementById("file").value="";
+  render();
+}
+async function viewItem(id, asExec){
+  var it=state.items.filter(function(x){return x.id===id;})[0]; if(!it) return;
+  try{
+    var bytes = await decryptItem(asExec?executorKey:ownerKey, it, asExec);
+    if(it.type==="text"){ alert(DEC.decode(bytes)); }
+    else { var blob=new Blob([bytes]); var url=URL.createObjectURL(blob); var a=document.createElement("a"); a.href=url; a.download=it.name; a.click(); setTimeout(function(){URL.revokeObjectURL(url);},2000); }
+  }catch(e){ alert(it.erased ? "This item was crypto-erased — the key is gone, the data is unrecoverable." : (asExec ? "Executor key can't open this (is the executor passphrase set, and is it a Legacy item?)." : "Wrong passphrase, or no key for this item.")); }
+}
+function removeItem(id){ state.items=state.items.filter(function(x){return x.id!==id;}); save(); render(); }
+function render(){
+  var box=document.getElementById("items");
+  document.getElementById("devLabel").textContent=deviceName();
+  document.getElementById("vcount").textContent="· "+state.items.length+" item"+(state.items.length===1?"":"s");
+  if(!state.items.length){ box.innerHTML='<div class="tiny">Nothing yet. Add a note or file above — it\'s encrypted before it\'s stored.</div>'; return; }
+  box.innerHTML = state.items.map(function(it){
+    var chip = it.erased ? '<span class="chip x">erased · unrecoverable</span>' : (it.kind==="legacy"?'<span class="chip l">Legacy</span>':'<span class="chip q">Quiet</span>');
+    var act;
+    if(it.erased){ act = it.exWrap ? '<button class="mini" onclick="viewItem(\''+it.id+'\',true)">Unlock (executor)</button>' : '<span class="tiny">gone</span>'; }
+    else { act = '<button class="mini" onclick="viewItem(\''+it.id+'\',false)">View</button>'; }
+    return '<div class="item"><div class="nm"><b>'+esc(it.name)+'</b><div class="s">'+chip+(it._noExec?' <span class="tiny">· no executor key set</span>':'')+'</div></div>'+act+'<button class="mini red" onclick="removeItem(\''+it.id+'\')">✕</button></div>';
+  }).join("");
+}
+function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+function fmt(ms){ if(ms<=0)return "0d 0h"; var d=Math.floor(ms/864e5),h=Math.floor((ms%864e5)/36e5),m=Math.floor((ms%36e5)/6e4); return d+"d "+h+"h "+(d===0?m+"m":""); }
+function tick(){ var el=document.getElementById("cd"); if(!el||!state) return; var left=(state.nextErase||0)-Date.now(); el.textContent=fmt(left); el.style.color = left< 3*864e5 ? "#e08a98" : "var(--ink)"; maybeAutoErase(); setTimeout(tick, 30000); }
+document.getElementById("devLabel").textContent=deviceName();
+</script>
+</body>
+</html>
