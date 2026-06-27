@@ -218,5 +218,6 @@ function fmt(ms){ if(ms<=0)return "0d 0h"; var d=Math.floor(ms/864e5),h=Math.flo
 function tick(){ var el=document.getElementById("cd"); if(!el||!state) return; var left=(state.nextErase||0)-Date.now(); el.textContent=fmt(left); el.style.color = left< 3*864e5 ? "#e08a98" : "var(--ink)"; maybeAutoErase(); setTimeout(tick, 30000); }
 document.getElementById("devLabel").textContent=deviceName();
 </script>
+  <script src="lukas_a2hs.js" defer></script>
 </body>
 </html>
